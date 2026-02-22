@@ -1,0 +1,1 @@
+"""TalentCopilot backend application."""
