@@ -2,6 +2,10 @@
 
 Multi-tenant, memory-enabled chatbot for recruiting teams, with **Human-in-the-Loop (HITL)** confirmation for tool actions. Built with FastAPI, LangChain, LangGraph, PostgreSQL, and Streamlit.
 
+## Demo
+
+📹 **[Watch the video demo](https://drive.google.com/file/d/1ZC2nUxNq7VcgnFlCDf8SFMsQkC4xyNND/view?usp=sharing)** (talent-copilot-demo.mp4)
+
 ## Features
 
 - **Conversational chat** about candidates and repositories
