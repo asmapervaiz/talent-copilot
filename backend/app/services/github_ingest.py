@@ -18,26 +18,30 @@ def _normalize_repo_url(url: str) -> str:
 
 
 def _parse_github_url(url: str) -> tuple[str, str]:
-    """Return (owner, repo)."""
+    """Return (owner, repo). Strips .git from repo name."""
     norm = _normalize_repo_url(url)
     parsed = urlparse(norm)
     path = parsed.path.strip("/")
     parts = path.split("/")
     if len(parts) >= 2:
-        return parts[0], parts[1]
+        owner, repo = parts[0], parts[1]
+        if repo.endswith(".git"):
+            repo = repo[:-4]
+        return owner, repo
     raise ValueError(f"Invalid GitHub URL: {url}")
 
 
 @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=2, max=30))
-def _get(url: str, headers: dict) -> dict | None:
+def _get(url: str, headers: dict) -> tuple[dict | None, int]:
+    """Returns (json_data, status_code). Caller can raise with status for better errors."""
     with httpx.Client(timeout=30.0) as client:
         r = client.get(url, headers=headers)
         if r.status_code == 403 and "rate limit" in r.text.lower():
             time.sleep(60)
             raise Exception("Rate limited")
         if r.status_code != 200:
-            return None
-        return r.json()
+            return None, r.status_code
+        return r.json(), r.status_code
 
 
 def _get_file_content(owner: str, repo: str, path: str, token: str) -> str | None:
@@ -77,9 +81,19 @@ def ingest_github_repo(repo_url: str) -> dict[str, Any]:
     base = f"https://api.github.com/repos/{owner}/{repo}"
 
     # Repo metadata
-    repo_data = _get(base, headers)
+    repo_data, status = _get(base, headers)
     if not repo_data:
-        raise ValueError(f"Cannot access repository: {repo_url}")
+        if status == 404:
+            raise ValueError(
+                f"Cannot access repository: {repo_url}. "
+                "The repo may not exist or may be private. For private repos, set GITHUB_TOKEN in .env to a token with repo scope."
+            )
+        if status == 403:
+            raise ValueError(
+                f"Access forbidden (403) for {repo_url}. "
+                "If the repo is private, set GITHUB_TOKEN in .env. Otherwise you may be rate-limited; try again later."
+            )
+        raise ValueError(f"Cannot access repository: {repo_url} (HTTP {status})")
     metadata_ = {
         "name": repo_data.get("name"),
         "full_name": repo_data.get("full_name"),
@@ -90,7 +104,7 @@ def ingest_github_repo(repo_url: str) -> dict[str, Any]:
 
     # Top-level contents (depth 1)
     default_branch = metadata_.get("default_branch", "main")
-    contents = _get(f"{base}/contents?ref={default_branch}", headers)
+    contents, _ = _get(f"{base}/contents?ref={default_branch}", headers)
     file_map = {}
     stack_signals = []
     if isinstance(contents, list):
