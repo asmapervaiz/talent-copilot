@@ -173,6 +173,20 @@ class ConfirmationRepository:
         )
         return result.scalar_one_or_none()
 
+    async def get_pending_for_session(self) -> Confirmation | None:
+        """Return the single pending confirmation for this session, if any."""
+        result = await self.db.execute(
+            select(Confirmation).where(
+                and_(
+                    Confirmation.tenant_id == self.tenant_id,
+                    Confirmation.user_id == self.user_id,
+                    Confirmation.session_id == self.session_id,
+                    Confirmation.status == "pending",
+                )
+            ).order_by(Confirmation.created_at.desc()).limit(1)
+        )
+        return result.scalar_one_or_none()
+
     async def resolve(self, confirmation_id: UUID, approved: bool) -> Confirmation | None:
         c = await self.get_pending(confirmation_id)
         if not c:

@@ -62,4 +62,5 @@ async def upload_cv(
         ),
         confirmation_id=conf.id,
         prompt="Do you want me to save this candidate profile to the workspace? (yes/no)",
+        tool_name="save_candidate",
     )

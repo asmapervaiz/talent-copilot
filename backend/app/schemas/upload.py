@@ -16,3 +16,4 @@ class CVUploadResponse(BaseModel):
     parsed: ParsedCandidate
     confirmation_id: UUID
     prompt: str = "Do you want me to save this candidate profile to the workspace? (yes/no)"
+    tool_name: str = "save_candidate"

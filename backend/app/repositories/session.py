@@ -103,6 +103,14 @@ class MessageRepository:
         )
         return list(result.scalars().all())
 
+    async def get_last_assistant_content(self) -> str | None:
+        """Content of the most recent assistant message, or None."""
+        rows = await self.get_recent(limit=50)
+        for m in reversed(rows):
+            if m.role == "assistant":
+                return m.content or ""
+        return None
+
 
 class SessionSummaryRepository:
     def __init__(self, db: AsyncSession, tenant_id: UUID):

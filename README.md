@@ -55,7 +55,7 @@ createdb talentcopilot
 
 #### Connecting to your local PostgreSQL database
 
-The app uses **PostgreSQL only** (via the **asyncpg** driver and SQLAlchemy `postgresql+asyncpg://` URLs). No SQLite.
+The app uses **PostgreSQL only** (via the **asyncpg** driver and SQLAlchemy `postgresql+asyncpg://` URLs).
 
 **Connection string format:**
 
