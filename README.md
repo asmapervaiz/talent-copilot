@@ -177,6 +177,4 @@ talentcopilot/
 └── README.md
 ```
 
-## License
 
-MIT (or as specified by your organization).
